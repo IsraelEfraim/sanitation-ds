@@ -17,16 +17,17 @@ auto main(int argc, char* argv[]) -> int {
         std::cout << "Reading sensor...\n" << std::endl;
     
         auto id = std::string(argv[1]);
-        auto location = "{\n   lat: "+std::string(argv[2])+",\n   lng: "+std::string(argv[3])+"\n },";
-
+        auto flow = 22;
+        auto status = "OK";
+         
         //  Prepare our context and publisher
         auto context = zmq::context_t(1);
         auto publisher = zmq::socket_t(context, zmq::socket_type::pub);
         publisher.connect("tcp://localhost:5559");
 
         while (true) {
-            auto fluxo = 22;
-            auto msg = "{\n id: "+id+",\n location: "+location+" \n}";
+            
+            auto msg = "ok";//"{\n id: "+id+",\n flow: "+flow+",\n status: "+status+" \n}";
 
             std::cout << msg << std::endl << std::endl;
             //  Send message to all subscribers
