@@ -2,8 +2,6 @@ require('dotenv').config()
 
 const zmq = require('zeromq')
 const mongoose = require('mongoose')
-const { runInContext } = require('vm')
-const { read } = require('fs/promises')
 const Sensor = require('../../models/mongoose/Sensor')(mongoose)
 const Reading = require('../../models/mongoose/Reading')(mongoose)
 

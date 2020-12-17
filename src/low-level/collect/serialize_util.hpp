@@ -33,5 +33,4 @@ template <typename ... T>
 auto json_keys(T&& ... args) -> std::string {
     auto serial = std::string{"{ "};
     return (serial + ... + to_key(args)) + std::string{"}"};
-
 }
