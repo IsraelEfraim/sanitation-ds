@@ -5,32 +5,14 @@
 #include <iostream>
 #include <random>
 #include <functional>
-//#include "reading.hpp"
 
-/*
-⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⣰⣿⣿⣿⣿⠿⠿⣿⣿⣿⣿⣿⣿⣿⣧⢀⠀⠀⠀⠀
-⠀⠀⠀⣿⣿⣿⠋⠀⠀⠀⠀⠀⠙⠀⠙⣿⣿⣿⣷⢳⢀⠀⠀⠀
-⠀⠀⣠⣿⣿⣿⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⢀
-⠀⠀⣸⣿⣿⣿⠸⠀⠀⠀⠒⠒⠒⠐⠀⠀⢿⣿⣿⣿⣿⣿⠀
-⠀⣴⣿⣿⣿⡿⠀⠒⣋⣙⡒⢰⠀⠤⣖⠒⢾⣿⣿⣿⣿⣧⠀
-⢺⣿⣿⣿⣿⢀⠀⠀⠉⠉⠉⠸⠀⡇⠉⠉⠀⢿⣿⣿⣿⣄
-⠀⠙⣿⣿⣧⢻⠀⠀⠀⠀⠀⠠⠀⠰⠀⠀⠀⣸⠸⣿⣿⠿⠰⠀
-⠀⠀⠀⠹⣿⣿⣿⣷⠀⡠⠙⣲⣔⣅⢡⣰⣷⣿⣿⣿⣧
-⠀⠀⠀⣼⣿⣿⣿⣿⠀⡿⠭⠭⠭⠭⢿⠀⣿⢻⣿⣿⠃ UM TAPA NA GOXSTOSA, ⠀
-⠀⠀⠀⠙⠛⣿⢻⠹⣿⠐⠙⠛⠟⠉⢀⣴⡟⢿⣿⡏⠀ YESS BABY.. TANKYOUu!
-⠀⠀⠀⠀⠀⠀⡟⠀⠀⠻⣦⣤⣶⠾⠋⠀⠀⠁⡦⢄⢀⠀⠀⠀
-⠀⠀⠀⠀⡠⠁⡇⠑⢄⠀⠀⠀⠀⠀⠀⠔⠀⠀⠁⠀⠀⠀⠉⠁
-⠀⠔⠊⠁⠀⠀⣇⠀⠀⠀⠑⡤⠤⢎⠁⠀⠀⡘⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⢢⠠⠀⡠⢆⠀⠀⡠⠙⢄⠀⡸⠀
-*/
+auto calaabocaaevai(double mean, double sd) -> std::function<double()> {
+    auto randomizer = std::default_random_engine(std::random_device{}());
+    auto normal = std::normal_distribution<>(mean, sd);
 
-auto distribution(double mean, double sd) -> int {//std::function<double()>{
-    std::random_device rd{};
-    std::mt19937 gen{rd()};
-    std::normal_distribution<> d{mean, sd};
-    return d(gen);
-    //return [d, gen](){ return d(gen); }; 
+    return [normal, randomizer]() mutable {
+        return normal(randomizer);
+    };
 }
 
 auto main(int argc, char* argv[]) -> int {
@@ -41,25 +23,20 @@ auto main(int argc, char* argv[]) -> int {
         std::cout << "Usage: sensor <target_zone>" << std::endl;
     } 
     else {
-        //  Socket to talk to server
         std::cout << "Reading sensor...\n" << std::endl;
     
         auto id = std::string(argv[1]);
-        //auto flow = distribution(50, 10);
+        auto flow = calaabocaaevai(50, 2);
         auto status = "OK"s;
          
-        //  Prepare our context and publisher
         auto context = zmq::context_t(1);
         auto publisher = zmq::socket_t(context, zmq::socket_type::pub);
         publisher.connect("tcp://localhost:5559");
 
         while (true) {
-            auto flow = distribution(50, 10);
-
-            auto msg = "{\n id: "s+id+",\n flow: "+std::to_string(flow)+",\n status: "+status+" \n}";
+            auto msg = "{\n id: "s+id+",\n flow: "+std::to_string(flow())+",\n status: "+status+" \n}";
 
             std::cout << msg << std::endl << std::endl;
-            //  Send message to all subscribers
             publisher.send(zmq::buffer(msg), zmq::send_flags::none);
 
             std::this_thread::sleep_for(1500ms);
