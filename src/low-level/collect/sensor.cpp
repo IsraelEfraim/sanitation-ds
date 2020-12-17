@@ -5,6 +5,7 @@
 #include <iostream>
 #include <random>
 #include <functional>
+#include "serialize_util.hpp"
 
 auto distribution(double mean, double sd) -> std::function<double()> {
     auto randomizer = std::default_random_engine(std::random_device{}());
@@ -24,7 +25,7 @@ auto main(int argc, char* argv[]) -> int {
     using namespace std::string_literals;
 
     if (argc == 1) {
-        std::cout << "Usage: sensor <target_zone>" << std::endl;
+        std::cout << "Usage: sensor <id>" << std::endl;
     } 
     else {
         std::cout << "Reading sensor...\n" << std::endl;
@@ -40,12 +41,13 @@ auto main(int argc, char* argv[]) -> int {
         publisher.connect("tcp://localhost:5559");
 
         while (true) {
-            auto msg = "{\n id: "s+id+",\n healthy: "+std::to_string(healthy)+",\n flow: "+std::to_string(flow())+",\n height: "+std::to_string(height())+",\n pressure: "+std::to_string(pressure())+"\n}";
-            
-            healthy = healthy ? sensor_healthy() : false;
-            
-            std::cout << msg << std::endl << std::endl;
+            auto msg = to_serial_json(json_keys("id", "healthy", "flow", "height", "pressure"),
+                                        id, healthy, flow(), height(), pressure());
+
             publisher.send(zmq::buffer(msg), zmq::send_flags::none);
+
+            std::cout << msg << std::endl;
+            healthy = healthy ? sensor_healthy() : false;
 
             std::this_thread::sleep_for(1500ms);
         }
