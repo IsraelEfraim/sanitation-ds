@@ -10,40 +10,91 @@ mongoose.connect(`mongodb+srv://ds-admin:${process.env.PW}@sanitation-ds.tvbje.m
     useUnifiedTopology: true
 })
 
-const sock = new zmq.Subscriber()
-sock.subscribe('')
+const chunkSize = 10
+const pool = []
 
-sock.connect('tcp://localhost:5560')
+const collect = new zmq.Subscriber()
+collect.subscribe('')
+collect.connect('tcp://localhost:5560')
 
+const dispatch = new zmq.Push()
+
+setupDispatch()
 receive()
+const id = setInterval(multiplex, 20000)
 
 async function receive() {
     console.log('Receiving')
 
-    for await (const msg of sock) {
-        console.log(JSON.parse(msg.toString()))
+    for await (const msg of collect) {
+        pool.push({ ...JSON.parse(msg.toString()), timestamp: Date.now() })
     }
 }
 
-async function Init() {
+async function setupDispatch() {
+    await dispatch.bind('tcp://*:7000')
+    console.log('Ready to dispatch jobs')
+}
+
+async function multiplex() {
+    console.log('Multiplexing')
+
     sensors = await Sensor.find()
 
-    for (const sensor of sensors) {
-        const { id } = sensor
+    const jobs = createJobs(sensors)
 
-        const reading = await Reading.create({
-            missing: false,
-            healthy: true,
-            bad_section: false,
-            flow: 50,
-            height: 5,
-            pressure: 2.5,
-        })
+    pool.length = 0
 
-        sensor.readings.push(reading)
-
-        await sensor.save()
-
-        console.log(sensor)
+    for (const job of jobs) {
+        await dispatch.send(job)
     }
+}
+
+function createJobs(sensors) {
+    const cache = {}
+
+    for (const sensor of sensors) {
+        const { id, zip } = sensor
+
+        if (zip in cache) {
+            cache[zip] = [ ...cache[zip], id ]
+        }
+        else {
+            cache[zip] = [ id ]
+        }
+    }
+
+    const chunks = createChunks(Object.values(cache), chunkSize)
+    const messages = sortBy(pool, 'timestamp')
+
+    const jobs = chunks.map(chunk => {
+        return JSON.stringify(chunk.map(id => {
+            const idx = messages.findIndex((msg) => msg.id === id)
+
+            if (idx >= 0) {
+                return { ...messages[idx], missing: false }
+            }
+            else {
+                return { id, healthy: 0, flow: 0, height: 0, pressure: 0, missing: true }
+            }
+        }))
+    })
+
+    return jobs
+}
+
+function createChunks(buffer, size) {
+    let elements = buffer.flat()
+    let chunkCount = Math.ceil(elements.length / size)
+
+    return [...Array(chunkCount).keys()].map(() => {
+        const chunk = elements.slice(0, size)
+        elements = elements.slice(size)
+
+        return chunk
+    })
+}
+
+function sortBy(queue, property) {
+    return [...queue].sort((a, b) => a[property] - b[property])
 }

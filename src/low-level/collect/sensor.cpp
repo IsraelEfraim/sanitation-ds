@@ -49,7 +49,7 @@ auto main(int argc, char* argv[]) -> int {
             std::cout << msg << std::endl;
             healthy = healthy ? sensor_healthy() : false;
 
-            std::this_thread::sleep_for(1500ms);
+            std::this_thread::sleep_for(10s);
         }
     }
 
