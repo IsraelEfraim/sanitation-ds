@@ -3,6 +3,7 @@ require('dotenv').config()
 const zmq = require('zeromq')
 const mongoose = require('mongoose')
 const { runInContext } = require('vm')
+const { read } = require('fs/promises')
 const Sensor = require('../../models/mongoose/Sensor')(mongoose)
 const Reading = require('../../models/mongoose/Reading')(mongoose)
 
@@ -16,13 +17,13 @@ sock.subscribe('')
 
 sock.connect('tcp://localhost:5560')
 
-run()
+receive()
 
-async function run() {
-    console.log('running')
+async function receive() {
+    console.log('Receiving')
 
     for await (const msg of sock) {
-        console.log(msg.toString())
+        console.log(JSON.parse(msg.toString()))
     }
 }
 
