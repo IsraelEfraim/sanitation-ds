@@ -33,15 +33,14 @@ auto main(int argc, char* argv[]) -> int {
         auto healthy = sensor_healthy();
         auto flow = distribution(50, 2);
         auto height = distribution(6, 1);
-        auto status = "OK"s;
-        
+        auto pressure = distribution(9, 0.5);
+
         auto context = zmq::context_t(1);
         auto publisher = zmq::socket_t(context, zmq::socket_type::pub);
         publisher.connect("tcp://localhost:5559");
 
         while (true) {
-            
-            auto msg = "{\n id: "s+id+",\n flow: "+std::to_string(flow())+",\n healthy: "+std::to_string(healthy)+",\n status: "+status+" \n}";
+            auto msg = "{\n id: "s+id+",\n healthy: "+std::to_string(healthy)+",\n flow: "+std::to_string(flow())+",\n height: "+std::to_string(height())+",\n pressure: "+std::to_string(pressure())+"\n}";
             
             healthy = healthy ? sensor_healthy() : false;
             
