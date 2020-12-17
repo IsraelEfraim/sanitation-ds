@@ -1,6 +1,8 @@
 require('dotenv').config()
 
+const zmq = require('zeromq')
 const mongoose = require('mongoose')
+const { runInContext } = require('vm')
 const Sensor = require('../../models/mongoose/Sensor')(mongoose)
 const Reading = require('../../models/mongoose/Reading')(mongoose)
 
@@ -8,6 +10,21 @@ mongoose.connect(`mongodb+srv://ds-admin:${process.env.PW}@sanitation-ds.tvbje.m
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
+
+const sock = new zmq.Subscriber()
+sock.subscribe('')
+
+sock.connect('tcp://localhost:5560')
+
+run()
+
+async function run() {
+    console.log('running')
+
+    for await (const msg of sock) {
+        console.log(msg.toString())
+    }
+}
 
 async function Init() {
     sensors = await Sensor.find()
@@ -31,5 +48,3 @@ async function Init() {
         console.log(sensor)
     }
 }
-
-Init()
