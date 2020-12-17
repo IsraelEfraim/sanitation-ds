@@ -1,11 +1,13 @@
 require('dotenv').config()
 
+const cors = require('cors')
 const express = require('express')
 const mongoose = require('mongoose')
 const Sensor = require('../models/mongoose/Sensor')(mongoose)
 const Reading = require('../models/mongoose/Reading')(mongoose)
 
 const app = express()
+app.use(cors())
 
 mongoose.connect(`mongodb+srv://ds-admin:${process.env.PW}@sanitation-ds.tvbje.mongodb.net/sanitation-ds?retryWrites=true&w=majority`, {
     useNewUrlParser: true,

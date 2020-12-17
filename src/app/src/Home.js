@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   makeStyles,
   AppBar,
@@ -16,16 +16,19 @@ import {
   Switch,
 } from '@material-ui/core'
 
-import DashboardIcon from '@material-ui/icons/Dashboard';
-import SettingsIcon from '@material-ui/icons/Settings';
-import HomeIcon from '@material-ui/icons/Home'
+import axios from 'axios'
+
+import BugReportIcon from '@material-ui/icons/BugReport'
+import DashboardIcon from '@material-ui/icons/Dashboard'
+import RefreshIcon from '@material-ui/icons/Refresh'
 import Whatshot from '@material-ui/icons/Whatshot'
 
+const endpoint = 'http://localhost:3301/watch/sensor'
 const drawerWidth = 240
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    height: '100vh',
+    height: '100%',
     backgroundColor: theme.palette.background.dark,
   },
   appBar: {
@@ -65,7 +68,17 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 function Home({ darkMode, setDarkMode }) {
+  const [ sensors, setSensors ] = useState([])
   const classes = useStyles()
+
+  async function fetchData() {
+    const response = await axios.get(endpoint)
+    setSensors(response.data)
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   return (
     <div className={classes.root}>
@@ -87,11 +100,12 @@ function Home({ darkMode, setDarkMode }) {
             className={classes.icons}
           />
           <Button
-            startIcon={<SettingsIcon />}
+            startIcon={<RefreshIcon />}
             variant='outlined'
             color='secondary'
+            onClick={() => fetchData()}
           >
-            Setup
+            Refresh
           </Button>
         </Toolbar>
       </AppBar>
@@ -108,15 +122,6 @@ function Home({ darkMode, setDarkMode }) {
             <div className={classes.drawerContainer}>
               <List>
                 <ListItem button classes={{ root: classes.listItem }}>
-                  <ListItemIcon>{<HomeIcon />}</ListItemIcon>
-                  <ListItemText
-                    classes={{
-                      primary: classes.listItemText,
-                    }}
-                    primary='Manage Sensors'
-                  />
-                </ListItem>
-                <ListItem button classes={{ root: classes.listItem }}>
                   <ListItemIcon>{<Whatshot />}</ListItemIcon>
                   <ListItemText
                     classes={{
@@ -130,18 +135,60 @@ function Home({ darkMode, setDarkMode }) {
           </Drawer>
         </Hidden>
 
-        <Box p={8}>
+        <Box className={classes.grow} p={8}>
           <Toolbar />
           <Typography
             variant='h5'
             color='textPrimary'
-            style={{ fontWeight: 600 }}
+            style={{ fontWeight: 600, marginBottom: '20px' }}
           >
-            Buchassa
+            Sensores
           </Typography>
 
           <Grid container spacing={4}>
-            
+            {sensors.map((item, index) => (
+                <Grid item lg={3} md={4} sm={6} xs={12}>
+                  <Box>
+                    <BugReportIcon style={{ height: '25px' }}/>
+                    <Box>
+                      <Typography
+                        style={{ fontWeight: 600 }}
+                        gutterBottom
+                        variant='body1'
+                        color='textPrimary'
+                      >
+                        {`${item.zip} ${item.order}`}
+                      </Typography>
+                      <Typography
+                        display='block'
+                        variant='body2'
+                        color='textSecondary'
+                      >
+                        {`${item.lat} ${item.lng}`}
+                      </Typography>
+                      {
+                        item.readings.length &&
+                        <>
+                          <Typography variant='body2' color='textSecondary'>
+                            {`Healthy: ${item.readings[0].healthy} • Problem: ${item.readings[0].bad_section ? item.readings[0].source_of_failure : 'No problem'}`}
+                          </Typography>
+                          <Typography variant='body2' color='textSecondary'>
+                            {`Flow ${item.readings[0].flow} • Pressure ${item.readings[0].pressure} Height ${item.readings[0].height}`}
+                          </Typography>
+                        </>
+                      }
+                      {
+                        !item.readings.length &&
+                        <>
+                          <Typography variant='body2' color='textSecondary'>
+                            {`No Data`}
+                          </Typography>
+                        </>
+                      }
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
           </Grid>
         </Box>
       </Box>
