@@ -15,6 +15,10 @@ auto distribution(double mean, double sd) -> std::function<double()> {
     };
 }
 
+auto sensor_healthy() -> bool {
+    return  (rand() % 100 + 1) >= 5 ? true : false;
+}
+
 auto main(int argc, char* argv[]) -> int {
     using namespace std::chrono_literals;
     using namespace std::string_literals;
@@ -26,16 +30,21 @@ auto main(int argc, char* argv[]) -> int {
         std::cout << "Reading sensor...\n" << std::endl;
     
         auto id = std::string(argv[1]);
+        auto healthy = sensor_healthy();
         auto flow = distribution(50, 2);
+        auto height = distribution(6, 1);
         auto status = "OK"s;
-         
+        
         auto context = zmq::context_t(1);
         auto publisher = zmq::socket_t(context, zmq::socket_type::pub);
         publisher.connect("tcp://localhost:5559");
 
         while (true) {
-            auto msg = "{\n id: "s+id+",\n flow: "+std::to_string(flow())+",\n status: "+status+" \n}";
-
+            
+            auto msg = "{\n id: "s+id+",\n flow: "+std::to_string(flow())+",\n healthy: "+std::to_string(healthy)+",\n status: "+status+" \n}";
+            
+            healthy = healthy ? sensor_healthy() : false;
+            
             std::cout << msg << std::endl << std::endl;
             publisher.send(zmq::buffer(msg), zmq::send_flags::none);
 
