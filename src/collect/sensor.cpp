@@ -6,7 +6,7 @@
 #include <random>
 #include <functional>
 
-auto calaabocaaevai(double mean, double sd) -> std::function<double()> {
+auto distribution(double mean, double sd) -> std::function<double()> {
     auto randomizer = std::default_random_engine(std::random_device{}());
     auto normal = std::normal_distribution<>(mean, sd);
 
@@ -26,7 +26,7 @@ auto main(int argc, char* argv[]) -> int {
         std::cout << "Reading sensor...\n" << std::endl;
     
         auto id = std::string(argv[1]);
-        auto flow = calaabocaaevai(50, 2);
+        auto flow = distribution(50, 2);
         auto status = "OK"s;
          
         auto context = zmq::context_t(1);
