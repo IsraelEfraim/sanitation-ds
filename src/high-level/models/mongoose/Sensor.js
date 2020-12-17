@@ -21,6 +21,8 @@ module.exports = (mongoose) => {
               type: mongoose.Schema.Types.ObjectId, ref: "Reading"
             }
           ]
+    }, {
+        timestamps: true
     })
 
     return mongoose.model('Sensor', Sensor)

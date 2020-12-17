@@ -32,6 +32,8 @@ module.exports = (mongoose) => {
             type: mongoose.Schema.Types.String,
             default: ''
         },
+    }, {
+        timestamps: true
     })
 
     return mongoose.model('Reading', Reading)
